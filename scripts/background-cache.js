@@ -96,7 +96,10 @@ async function getSingleChannelInfo(channel, { before = '', after = '', q = '' }
   // 速率限制
   await rateLimiter.waitForSlot();
 
-  const host = process.env.TELEGRAM_HOST || 't.me';
+  // 反风控：Host 随机池 (与主代码逻辑保持一致)
+  const hostStr = process.env.TELEGRAM_HOST || 't.me';
+  const hosts = hostStr.split(',').map(h => h.trim()).filter(Boolean);
+  const host = hosts[Math.floor(Math.random() * hosts.length)];
   const staticProxy = process.env.STATIC_PROXY || '';
 
   const url = `https://${host}/s/${channel}`;

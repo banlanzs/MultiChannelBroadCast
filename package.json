@@ -13,7 +13,8 @@
     "start": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "astro": "astro"
+    "astro": "astro",
+    "test": "vitest"
   },
   "keywords": [
     "telegram",
@@ -48,7 +49,8 @@
     "cross-env": "^10.1.0",
     "cssnano": "^7.0.5",
     "postcss-nesting": "^13.0.0",
-    "std-env": "^3.7.0"
+    "std-env": "^3.7.0",
+    "vitest": "^4.1.5"
   },
   "browserslist": [
     "defaults"

@@ -165,6 +165,29 @@ SENTRY_PROJECT=your_project
 SENTRY_AUTH_TOKEN=your_auth_token
 ```
 
+### Telegram Push Notification (Optional)
+
+Automatically push new messages to a specified Telegram channel when content is fetched:
+
+```env
+## Enable push notification (set to true to enable)
+TELEGRAM_PUSH_ENABLED=true
+
+## Telegram Bot Token (get from @BotFather)
+TELEGRAM_BOT_TOKEN=your_bot_token_here
+
+## Target channel ID (format: @channelname or chat ID)
+## Bot must be admin in the channel or have send message permission
+TELEGRAM_PUSH_CHANNEL_ID=@your_channel_name
+```
+
+**Setup Steps:**
+1. Create a bot via [@BotFather](https://t.me/BotFather) on Telegram
+2. Send `/newbot` and follow the instructions to get your Bot Token
+3. Add the bot as an administrator to your target channel (or ensure it has send message permission)
+4. Configure the environment variables above
+5. The push feature is disabled by default and won't affect existing functionality
+
 
 ## Custom Styling
 

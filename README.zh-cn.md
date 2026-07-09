@@ -165,6 +165,29 @@ SENTRY_PROJECT=your_project
 SENTRY_AUTH_TOKEN=your_auth_token
 ```
 
+### Telegram 推送功能 (可选)
+
+在网站获取新内容时,自动将消息推送到指定的 Telegram 频道:
+
+```env
+## 启用推送通知 (设置为 true 启用)
+TELEGRAM_PUSH_ENABLED=true
+
+## Telegram Bot Token (通过 @BotFather 获取)
+TELEGRAM_BOT_TOKEN=your_bot_token_here
+
+## 目标推送频道 ID (格式: @频道名 或 chat ID)
+## 机器人需要是该频道的管理员或有发送消息权限
+TELEGRAM_PUSH_CHANNEL_ID=@your_channel_name
+```
+
+**配置步骤:**
+1. 通过 Telegram 的 [@BotFather](https://t.me/BotFather) 创建机器人
+2. 发送 `/newbot` 并按提示获取 Bot Token
+3. 将机器人添加为目标频道的管理员(或确保有发送消息权限)
+4. 配置上述环境变量
+5. 推送功能默认关闭,不会影响现有功能
+
 
 ## 自定义样式
 

@@ -4,6 +4,30 @@ import { LRUCache } from 'lru-cache'
 import flourite from 'flourite'
 import prism from '../prism'
 import { getEnv } from '../env'
+import { pushMessage } from './push-service.js'
+
+// ==========================================
+// 反风控配置
+// ==========================================
+
+// User-Agent 池：模拟真实桌面浏览器
+const USER_AGENTS = [
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:123.0) Gecko/20100101 Firefox/123.0',
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.2 Safari/605.1.15',
+  'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+]
+
+function getRandomUserAgent() {
+  return USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)]
+}
+
+// 随机延迟函数 (毫秒) - 模拟真人操作间隔
+function randomDelay(min = 2000, max = 4000) {
+  const delay = Math.floor(Math.random() * (max - min + 1)) + min
+  return new Promise(resolve => setTimeout(resolve, delay))
+}
 
 // 图片代理服务配置
 const IMAGE_PROXIES = [
@@ -292,14 +316,24 @@ export async function getSingleChannelInfo(Astro, channel, { before = '', after 
   // Keep using local proxy for non-image assets (video, audio) if needed
   // or fallback to '' if no local proxy defined (though local proxy is detected via env normally)
   const localProxy = getEnv(import.meta.env, Astro, 'STATIC_PROXY') ?? ''
-  const host = getEnv(import.meta.env, Astro, 'TELEGRAM_HOST') ?? 't.me'
+  
+  // 反风控：Host 随机池 (支持配置多个 Host，随机选择以分散压力)
+  const hostStr = getEnv(import.meta.env, Astro, 'TELEGRAM_HOST') || 't.me'
+  const hosts = hostStr.split(',').map(h => h.trim()).filter(Boolean)
+  const host = hosts[Math.floor(Math.random() * hosts.length)]
 
-  const headers = Object.fromEntries(Astro.request.headers)
+  // 构建请求头
+  const headers = Astro.request ? Object.fromEntries(Astro.request.headers) : {}
   Object.keys(headers).forEach((key) => {
     if (unnecessaryHeaders.includes(key)) {
       delete headers[key]
     }
   })
+
+  // 反风控：确保始终带有有效的 User-Agent (覆盖 Cron 等缺失 UA 的场景)
+  if (!headers['User-Agent'] || headers['User-Agent'].toLowerCase().includes('bot') || headers['User-Agent'].toLowerCase().includes('crawler')) {
+    headers['User-Agent'] = getRandomUserAgent()
+  }
 
   // 如果是单个帖子,先获取频道首页来提取频道标题
   let channelTitle = channel
@@ -406,6 +440,28 @@ export async function getSingleChannelInfo(Astro, channel, { before = '', after 
     })
   }
 
+  // 异步推送新消息
+  if (posts?.length > 0) {
+    const pushTask = (async () => {
+      // 按时间倒序,只推送最新的几条消息,避免一次性推送太多
+      const recentPosts = posts.slice(0, 3)
+      for (const post of recentPosts) {
+        try {
+          await pushMessage(post, Astro, import.meta.env)
+          // 每条消息间隔 1 秒,避免触发速率限制
+          await new Promise(resolve => setTimeout(resolve, 1000))
+        } catch (err) {
+          console.error('[Push] Unhandled error:', err)
+        }
+      }
+    })()
+
+    // Cloudflare Pages: 使用 waitUntil 确保响应返回后继续执行
+    if (Astro?.locals?.cfContext) {
+      Astro.locals.cfContext.waitUntil(pushTask)
+    }
+  }
+
   const channelInfo = {
     posts,
     title: channelTitle,
@@ -449,10 +505,22 @@ export async function getChannelInfo(Astro, { before = '', after = '', q = '' } 
 
   console.info('Fetching multi-channel:', channels)
 
-  // 并发获取所有频道数据
-  const channelInfos = await Promise.all(
-    channels.map(channel => getSingleChannelInfo(Astro, channel, { before, after, q }))
-  )
+  // 分批并发获取频道数据 (防风控: 限制单次并发量)
+  const channelInfos = []
+  const BATCH_SIZE = 2 // 每次最多并发 2 个频道
+
+  for (let i = 0; i < channels.length; i += BATCH_SIZE) {
+    const batch = channels.slice(i, i + BATCH_SIZE)
+    const batchResults = await Promise.all(
+      batch.map(channel => getSingleChannelInfo(Astro, channel, { before, after, q }))
+    )
+    channelInfos.push(...batchResults)
+
+    // 每批之间随机延迟 (模拟真人翻页间隔，降低风控概率)
+    if (i + BATCH_SIZE < channels.length) {
+      await randomDelay(2000, 4000)
+    }
+  }
 
   // 聚合所有帖子
   let allPosts = []
@@ -479,6 +547,28 @@ export async function getChannelInfo(Astro, { before = '', after = '', q = '' } 
     seen.add(key)
     return true
   })
+
+  // 异步推送新消息
+  if (allPosts.length > 0) {
+    const pushTask = (async () => {
+      // 按时间倒序,只推送最新的几条消息,避免一次性推送太多
+      const recentPosts = allPosts.slice(0, 3)
+      for (const post of recentPosts) {
+        try {
+          await pushMessage(post, Astro, import.meta.env)
+          // 每条消息间隔 1 秒,避免触发速率限制
+          await new Promise(resolve => setTimeout(resolve, 1000))
+        } catch (err) {
+          console.error('[Push] Unhandled error:', err)
+        }
+      }
+    })()
+
+    // Cloudflare Pages: 使用 waitUntil 确保响应返回后继续执行
+    if (Astro?.locals?.cfContext) {
+      Astro.locals.cfContext.waitUntil(pushTask)
+    }
+  }
 
   // 构建聚合结果
   const siteName = getEnv(import.meta.env, Astro, 'SITE_NAME') || 'Multi-Channel Broadcast'
