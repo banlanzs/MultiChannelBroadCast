@@ -33,7 +33,7 @@ function randomDelay(min = 2000, max = 4000) {
 const IMAGE_PROXIES = [
   {
     name: 'cdnjson',
-    enabled: true,
+    enabled: false, // 禁用: 返回HTML页面(状态码200)而非直接图片，onerror无法检测失败
     build: (encoded) => `https://cdn.cdnjson.com/pic.html?url=${encoded}`
   },
   {
@@ -101,11 +101,14 @@ function getProxyUrl(url) {
   }
 }
 
-// 故障转移 URL 生成函数
+// 故障转移 URL 生成函数 — 返回两级兜底: wsrv 代理 + 原始 URL
 function getFallbackUrl(url) {
-  if (!url) return ''
+  if (!url) return { wsrv: '', original: '' }
   const fallback = IMAGE_PROXIES.find(p => p.name === FALLBACK_PROXY_NAME)
-  return fallback.build(encodeURIComponent(url), url)
+  return {
+    wsrv: fallback.build(encodeURIComponent(url), url),
+    original: url
+  }
 }
 
 // 使用 BroadcastChannel 的简单缓存配置
@@ -124,11 +127,11 @@ function getVideoStickers($, item, { staticProxy, index }) {
   return $(item).find('.js-videosticker_video')?.map((_index, video) => {
     const url = $(video)?.attr('src')
     const imgurl = $(video).find('img')?.attr('src')
-    const fallbackUrl = getFallbackUrl(imgurl)
+    const fallback = getFallbackUrl(imgurl)
     return `
     <div style="background-image: none; width: 256px;">
       <video src="${staticProxy + url}" width="100%" height="100%" alt="Video Sticker" preload muted autoplay loop playsinline disablepictureinpicture >
-        <img class="sticker" src="${getProxyUrl(imgurl)}" alt="Video Sticker" loading="${index > 4 ? 'eager' : 'lazy'}" referrerpolicy="no-referrer" onerror="this.onerror=null;this.src='${fallbackUrl}'" />
+        <img class="sticker" src="${getProxyUrl(imgurl)}" alt="Video Sticker" loading="${index > 4 ? 'eager' : 'lazy'}" referrerpolicy="no-referrer" onerror="this.onerror=function(){this.onerror=null;this.src='${fallback.original}'};this.src='${fallback.wsrv}';" />
       </video>
     </div>
     `
@@ -138,8 +141,8 @@ function getVideoStickers($, item, { staticProxy, index }) {
 function getImageStickers($, item, { index }) {
   return $(item).find('.tgme_widget_message_sticker')?.map((_index, image) => {
     const url = $(image)?.attr('data-webp')
-    const fallbackUrl = getFallbackUrl(url)
-    return `<img class="sticker" src="${getProxyUrl(url)}" style="width: 256px;" alt="Sticker" loading="${index > 4 ? 'eager' : 'lazy'}" referrerpolicy="no-referrer" onerror="this.onerror=null;this.src='${fallbackUrl}'" />`
+    const fallback = getFallbackUrl(url)
+    return `<img class="sticker" src="${getProxyUrl(url)}" style="width: 256px;" alt="Sticker" loading="${index > 4 ? 'eager' : 'lazy'}" referrerpolicy="no-referrer" onerror="this.onerror=function(){this.onerror=null;this.src='${fallback.original}'};this.src='${fallback.wsrv}';" />`
   })?.get()?.join('')
 }
 
@@ -147,13 +150,14 @@ function getImages($, item, { id, index, title }) {
   const images = $(item).find('.tgme_widget_message_photo_wrap')?.map((_index, photo) => {
     const url = $(photo).attr('style').match(/url\(["'](.*?)["']/)?.[1]
     const popoverId = `modal-${id}-${_index}`
-    const fallbackUrl = getFallbackUrl(url)
+    const fallback = getFallbackUrl(url)
+    const onerrorChain = `this.onerror=function(){this.onerror=null;this.src='${fallback.original}'};this.src='${fallback.wsrv}';`
     return `
       <button class="image-preview-button image-preview-wrap" popovertarget="${popoverId}" popovertargetaction="show">
-        <img src="${getProxyUrl(url)}" alt="${title}" loading="${index > 4 ? 'eager' : 'lazy'}" referrerpolicy="no-referrer" onerror="this.onerror=null;this.src='${fallbackUrl}'" />
+        <img src="${getProxyUrl(url)}" alt="${title}" loading="${index > 4 ? 'eager' : 'lazy'}" referrerpolicy="no-referrer" onerror="${onerrorChain}" />
       </button>
       <button class="image-preview-button modal" id="${popoverId}" popovertarget="${popoverId}" popovertargetaction="hide" popover>
-        <img class="modal-img" src="${getProxyUrl(url)}" alt="${title}" loading="lazy" referrerpolicy="no-referrer" onerror="this.onerror=null;this.src='${fallbackUrl}'" />
+        <img class="modal-img" src="${getProxyUrl(url)}" alt="${title}" loading="lazy" referrerpolicy="no-referrer" onerror="${onerrorChain}" />
       </button>
     `
   })?.get()
@@ -192,9 +196,13 @@ function getLinkPreview($, item, { staticProxy, index }) {
   const image = $(item).find('.link_preview_image')
   const src = image?.attr('style')?.match(/url\(["'](.*?)["']/i)?.[1]
   const imageSrc = src ? getProxyUrl(src) : ''
-  const fallbackUrl = src ? getFallbackUrl(src) : ''
+  const fallback = src ? getFallbackUrl(src) : null
 
-  image?.replaceWith(`<img class="link_preview_image" alt="${title}" src="${imageSrc}" loading="${index > 4 ? 'eager' : 'lazy'}" referrerpolicy="no-referrer" onerror="this.onerror=null;this.src='${fallbackUrl}'" />`)
+  if (fallback) {
+    image?.replaceWith(`<img class="link_preview_image" alt="${title}" src="${imageSrc}" loading="${index > 4 ? 'eager' : 'lazy'}" referrerpolicy="no-referrer" onerror="this.onerror=function(){this.onerror=null;this.src='${fallback.original}'};this.src='${fallback.wsrv}';" />`)
+  } else if (imageSrc) {
+    image?.replaceWith(`<img class="link_preview_image" alt="${title}" src="${imageSrc}" loading="${index > 4 ? 'eager' : 'lazy'}" referrerpolicy="no-referrer" />`)
+  }
   return $.html(link)
 }
 
@@ -216,8 +224,10 @@ function getReply($, item, { channel }) {
       const urlMatch = style.match(/url\(['"]?(.*?)['"]?\)/)
       if (urlMatch && urlMatch[1]) {
         const originalUrl = urlMatch[1]
-        // CSS 背景图直接使用 wsrv.nl (无法使用 onerror)
-        const proxiedUrl = getFallbackUrl(originalUrl)
+        // CSS 背景图无法使用 onerror，优先使用 wsrv，降级到原始URL
+        const fallback = getFallbackUrl(originalUrl)
+        // wsrv 对 Telegram 图床兼容性好，优先尝试
+        const proxiedUrl = fallback.wsrv
         const newStyle = style.replace(urlMatch[0], `url('${proxiedUrl}')`)
         thumb.attr('style', newStyle)
       }

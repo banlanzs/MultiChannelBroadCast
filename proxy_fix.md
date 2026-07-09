@@ -4,7 +4,7 @@
 
 为了解决 Cloudflare Pages Functions 请求数过高（每天超过 10 万次限制）的问题，我们对项目进行了以下关键优化：
 
-### A. 实施“分流代理”策略 (Split Proxy)
+### A. 实施”分流代理”策略 (Split Proxy)
 我们根据媒体类型拆分了流量路径，以平衡成本与功能：
 
 | 资源类型 | 处理策略 | 路由地址 | Functions 消耗 | 说明 |
@@ -25,6 +25,20 @@
 优化了 `src/middleware.js`，设置了更激进的 `Cache-Control` 头：
 *   **`s-maxage=3600`**：指示 Cloudflare CDN 缓存 HTML 页面 **1小时**。在此期间，重复访问直接命中 CDN，**不消耗 Functions 额度**。
 
+### D. 三级代理回退策略
+实现三级回退机制，确保图片加载的高可用性：
+
+| 回退级别 | 代理服务 | 触发条件 | 说明 |
+| :--- | :--- | :--- | :--- |
+| **一级** | 主代理（cdnjson/weserv/wsrv 哈希分片） | 首次加载 | 通过哈希算法分配到不同代理，负载均衡 |
+| **二级** | wsrv.nl 备用代理 | 一级代理请求失败（onerror） | 当主代理不可用时，切换到 wsrv.nl |
+| **三级** | 原始 URL（用户系统代理） | 二级代理请求失败（onerror） | wsrv 也失败时，回退到 Telegram 原始 URL，由用户设备系统代理访问 |
+
+**技术实现**：
+- `getFallbackUrl()` 返回 `{wsrv, original}` 对象
+- HTML onerror 链：`onerror=”this.onerror=null;this.src='${fallback.wsrv}';this.onerror=function(){this.onerror=null;this.src='${fallback.original}'};”`
+- CSS 背景图无法使用 onerror，只能依赖 wsrv 代理
+
 ---
 
 ## 2. 代理原理深度解析
@@ -35,7 +49,7 @@
 *   **工作流**：用户请求图片 -> **触发 Cloudflare Function** -> 脚本下载图片 -> 脚本转发给用户。
 *   **问题**：
     *   **按次计费**：**每张图片**的加载都会触发一次代码执行。如果页面有 100 张图，刷新一次就消耗 100 个配额。
-    *   **资源浪费**：这相当于雇佣了一个“秘书”，每次看照片都要秘书亲自跑一趟 Telegram 总部取回来。
+    *   **资源浪费**：这相当于雇佣了一个”秘书”，每次看照片都要秘书亲自跑一趟 Telegram 总部取回来。
 
 ### 方案二：`wsrv.nl` 外部代理 (新方案)
 **原理**：基于 Nginx 和 CDN 的公共图片缓存服务。
@@ -44,4 +58,4 @@
 *   **优势**：
     *   **零消耗**：流量完全不经过你的 Cloudflare 账号。
     *   **高性能**：自动进行 WebP 转换和压缩，加载速度更快。
-    *   **省心**：相当于直接告诉用户“照片在快递柜，自取”，你的“秘书”（Function）可以休息了。
+    *   **省心**：相当于直接告诉用户”照片在快递柜，自取”，你的”秘书”（Function）可以休息了。

@@ -41,6 +41,8 @@ Thumbs.db
 .turbo
 .ace-tool/
 .claude/
+.codex/
+.ccg/
 
 # Backup files
 vercel.json.bak

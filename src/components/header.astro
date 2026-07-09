@@ -31,7 +31,7 @@ const channelUrl = channel?.href === false ? null : (channel?.href || (channel?.
         alt={channel?.title || 'Site Avatar'}
         class="header-avatar"
         referrerpolicy="no-referrer"
-        onerror={channel?.avatarFallback ? `this.onerror=null;this.src='${channel.avatarFallback}'` : undefined}
+        onerror={channel?.avatarFallback?.wsrv ? `this.onerror=function(){this.onerror=null;this.src='${channel.avatarFallback.original}'};this.src='${channel.avatarFallback.wsrv}';` : undefined}
       />
     </a>
   )}
