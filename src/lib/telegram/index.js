@@ -131,7 +131,7 @@ function getVideoStickers($, item, { staticProxy, index }) {
     return `
     <div style="background-image: none; width: 256px;">
       <video src="${staticProxy + url}" width="100%" height="100%" alt="Video Sticker" preload muted autoplay loop playsinline disablepictureinpicture >
-        <img class="sticker" src="${getProxyUrl(imgurl)}" alt="Video Sticker" loading="${index > 4 ? 'eager' : 'lazy'}" referrerpolicy="no-referrer" onerror="this.onerror=function(){this.onerror=null;this.src='${fallback.original}'};this.src='${fallback.wsrv}';" />
+        <img class="sticker" src="${getProxyUrl(imgurl)}" alt="Video Sticker" loading="${index > 4 ? 'eager' : 'lazy'}" decoding="async" referrerpolicy="no-referrer" onerror="this.onerror=function(){this.onerror=null;this.src='${fallback.original}'};this.src='${fallback.wsrv}';" />
       </video>
     </div>
     `
@@ -142,7 +142,7 @@ function getImageStickers($, item, { index }) {
   return $(item).find('.tgme_widget_message_sticker')?.map((_index, image) => {
     const url = $(image)?.attr('data-webp')
     const fallback = getFallbackUrl(url)
-    return `<img class="sticker" src="${getProxyUrl(url)}" style="width: 256px;" alt="Sticker" loading="${index > 4 ? 'eager' : 'lazy'}" referrerpolicy="no-referrer" onerror="this.onerror=function(){this.onerror=null;this.src='${fallback.original}'};this.src='${fallback.wsrv}';" />`
+    return `<img class="sticker" src="${getProxyUrl(url)}" style="width: 256px;" alt="Sticker" loading="${index > 4 ? 'eager' : 'lazy'}" decoding="async" referrerpolicy="no-referrer" onerror="this.onerror=function(){this.onerror=null;this.src='${fallback.original}'};this.src='${fallback.wsrv}';" />`
   })?.get()?.join('')
 }
 
@@ -154,10 +154,10 @@ function getImages($, item, { id, index, title }) {
     const onerrorChain = `this.onerror=function(){this.onerror=null;this.src='${fallback.original}'};this.src='${fallback.wsrv}';`
     return `
       <button class="image-preview-button image-preview-wrap" popovertarget="${popoverId}" popovertargetaction="show">
-        <img src="${getProxyUrl(url)}" alt="${title}" loading="${index > 4 ? 'eager' : 'lazy'}" referrerpolicy="no-referrer" onerror="${onerrorChain}" />
+        <img src="${getProxyUrl(url)}" alt="${title}" loading="${index > 4 ? 'eager' : 'lazy'}" decoding="async" referrerpolicy="no-referrer" onerror="${onerrorChain}" />
       </button>
       <button class="image-preview-button modal" id="${popoverId}" popovertarget="${popoverId}" popovertargetaction="hide" popover>
-        <img class="modal-img" src="${getProxyUrl(url)}" alt="${title}" loading="lazy" referrerpolicy="no-referrer" onerror="${onerrorChain}" />
+        <img class="modal-img" src="${getProxyUrl(url)}" alt="${title}" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="${onerrorChain}" />
       </button>
     `
   })?.get()
@@ -199,9 +199,9 @@ function getLinkPreview($, item, { staticProxy, index }) {
   const fallback = src ? getFallbackUrl(src) : null
 
   if (fallback) {
-    image?.replaceWith(`<img class="link_preview_image" alt="${title}" src="${imageSrc}" loading="${index > 4 ? 'eager' : 'lazy'}" referrerpolicy="no-referrer" onerror="this.onerror=function(){this.onerror=null;this.src='${fallback.original}'};this.src='${fallback.wsrv}';" />`)
+    image?.replaceWith(`<img class="link_preview_image" alt="${title}" src="${imageSrc}" loading="${index > 4 ? 'eager' : 'lazy'}" decoding="async" referrerpolicy="no-referrer" onerror="this.onerror=function(){this.onerror=null;this.src='${fallback.original}'};this.src='${fallback.wsrv}';" />`)
   } else if (imageSrc) {
-    image?.replaceWith(`<img class="link_preview_image" alt="${title}" src="${imageSrc}" loading="${index > 4 ? 'eager' : 'lazy'}" referrerpolicy="no-referrer" />`)
+    image?.replaceWith(`<img class="link_preview_image" alt="${title}" src="${imageSrc}" loading="${index > 4 ? 'eager' : 'lazy'}" decoding="async" referrerpolicy="no-referrer" />`)
   }
   return $.html(link)
 }

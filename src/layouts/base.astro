@@ -59,6 +59,8 @@ const twitter = getEnv(import.meta.env, Astro, 'TWITTER')
 // 获取站点头像用于 favicon
 const siteAvatar = getEnv(import.meta.env, Astro, 'SITE_AVATAR')
 
+const siteName = getEnv(import.meta.env, Astro, 'SITE_NAME') || 'Multi-Channel Broadcast'
+
 const seoParams = {
   title: seo?.title,
   description: seo?.text ?? channel?.description,
@@ -67,7 +69,7 @@ const seoParams = {
   nofollow: seo?.nofollow ?? getEnv(import.meta.env, Astro, 'NOFOLLOW'),
   openGraph: {
     basic: {
-      type: 'website',
+      type: seo?.type ?? 'website',
       title: channel?.title ?? '',
       url: canonical,
       image: channel?.avatar ? channel.avatar : origin + '/favicon.ico',
@@ -75,7 +77,14 @@ const seoParams = {
     optional: {
       description: seo?.text ?? channel?.description,
       locale,
+      siteName,
     },
+    article: seo?.publishedTime ? {
+      publishedTime: seo.publishedTime,
+      modifiedTime: seo.modifiedTime,
+      authors: seo.author ? [seo.author] : undefined,
+      tags: seo.tags,
+    } : undefined,
   },
   extend: {
     link: [
@@ -303,8 +312,8 @@ const showSearchScope = !GOOGLE_SEARCH_SITE && hasChannelScope
         </div>
       </div>
     </aside>
-    <button id="back-to-top" aria-label="Back to top" type="button">
-      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"></path></svg>
+    <button id="back-to-top" aria-label="Back to top" type="button">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"></path></svg>
     </button>
     {
       // 防护：避免因为环境变量中误写入仅包含分隔线（如 "---"）而将其原样注入到页面
@@ -614,54 +623,63 @@ const showSearchScope = !GOOGLE_SEARCH_SITE && hasChannelScope
 </style>
 
 <script>
-  // 返回顶部按钮功能
-  document.addEventListener('DOMContentLoaded', () => {
-    const backToTopBtn = document.getElementById('back-to-top');
-    if (backToTopBtn) {
-      backToTopBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        window.scrollTo({
-          top: 0,
-          behavior: 'smooth'
-        });
-      });
-    }
-
-    // 移动端菜单切换
-    const toggle = document.querySelector('.mobile-menu-toggle')
-    const menu = document.querySelector('.mobile-menu')
-    const overlay = document.querySelector('.mobile-overlay')
-
-    if (toggle && menu && overlay) {
-      toggle.addEventListener('click', () => {
-        toggle.classList.toggle('active')
-        menu.classList.toggle('active')
-        overlay.classList.toggle('active')
-      })
-
-      overlay.addEventListener('click', () => {
-        toggle.classList.remove('active')
-        menu.classList.remove('active')
-        overlay.classList.remove('active')
-      })
-
-      // 点击链接后关闭菜单
-      menu.querySelectorAll('a').forEach(link => {
-        link.addEventListener('click', () => {
-          toggle.classList.remove('active')
-          menu.classList.remove('active')
-          overlay.classList.remove('active')
-        })
-      })
-      // 关闭按钮
-      const closeBtn = document.querySelector('.mobile-menu-close')
-      if (closeBtn) {
-        closeBtn.addEventListener('click', () => {
-          toggle.classList.remove('active')
-          menu.classList.remove('active')
-          overlay.classList.remove('active')
-        })
-      }
-    }
+  // 返回顶部按钮功能
+  document.addEventListener('DOMContentLoaded', () => {
+    const backToTopBtn = document.getElementById('back-to-top');
+    if (backToTopBtn) {
+      backToTopBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        window.scrollTo({
+          top: 0,
+          behavior: 'smooth'
+        });
+      });
+    }
+
+    // 移动端菜单切换
+    const toggle = document.querySelector('.mobile-menu-toggle')
+    const menu = document.querySelector('.mobile-menu')
+    const overlay = document.querySelector('.mobile-overlay')
+
+    if (toggle && menu && overlay) {
+      toggle.addEventListener('click', () => {
+        toggle.classList.toggle('active')
+        menu.classList.toggle('active')
+        overlay.classList.toggle('active')
+      })
+
+      overlay.addEventListener('click', () => {
+        toggle.classList.remove('active')
+        menu.classList.remove('active')
+        overlay.classList.remove('active')
+      })
+
+      // 点击链接后关闭菜单
+      menu.querySelectorAll('a').forEach(link => {
+        link.addEventListener('click', () => {
+          toggle.classList.remove('active')
+          menu.classList.remove('active')
+          overlay.classList.remove('active')
+        })
+      })
+      // 关闭按钮
+      const closeBtn = document.querySelector('.mobile-menu-close')
+      if (closeBtn) {
+        closeBtn.addEventListener('click', () => {
+          toggle.classList.remove('active')
+          menu.classList.remove('active')
+          overlay.classList.remove('active')
+        })
+      }
+    }
   })
+</script>
+
+<!-- Service Worker 注册 -->
+<script is:inline>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/sw.js').catch(() => {})
+    })
+  }
 </script>

@@ -22,14 +22,16 @@ const channelInfos = await Promise.all(channels.map(async (ch) => {
     return {
       username: ch,
       title: info.title || ch,
-      avatar: info.avatar || ''
+      avatar: info.avatar || '',
+      avatarFallback: info.avatarFallback || null
     }
   } catch (e) {
     // 获取失败时使用备用数据
     return {
       username: ch,
       title: ch,
-      avatar: ''
+      avatar: '',
+      avatarFallback: null
     }
   }
 }))
@@ -51,7 +53,14 @@ const siteHeader = {
         <a class="channel-card" href={`${SITE_URL}channel/${info.username}`} title={info.title}>
           <div class="avatar-wrap">
             {info.avatar ? (
-              <img src={info.avatar} alt={info.title} loading="lazy" />
+              <img
+                src={info.avatar}
+                alt={info.title}
+                loading="lazy"
+                decoding="async"
+                referrerpolicy="no-referrer"
+                onerror={info.avatarFallback?.wsrv ? `this.onerror=function(){this.onerror=null;this.src='${info.avatarFallback.original}'};this.src='${info.avatarFallback.wsrv}';` : undefined}
+              />
             ) : (
               <div class="avatar-fallback">@</div>
             )}

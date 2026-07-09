@@ -68,7 +68,7 @@ export default defineConfig({
         sentry({
           enabled: {
             client: false,
-            server: process.env.SENTRY_DSN,
+            server: !!process.env.SENTRY_DSN,
           },
           dsn: process.env.SENTRY_DSN,
           sourceMapsUploadOptions: {

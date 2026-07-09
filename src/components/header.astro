@@ -14,9 +14,13 @@ const podcast = getEnv(import.meta.env, Astro, 'PODCAST')
 const rssHref = rssUrl || (channel?.username ? `${SITE_URL}channel/${channel.username}/rss.xml` : `${SITE_URL}rss.xml`)
 const showRss = showGlobalRss || Boolean(channel?.username)
 
-// 自定义站点图标,优先级: SITE_AVATAR > channel.avatar
+// 自定义站点图标
 const siteAvatar = getEnv(import.meta.env, Astro, 'SITE_AVATAR')
-const avatarUrl = siteAvatar || channel?.avatar
+// 优先级: 频道页使用频道头像，首页使用 SITE_AVATAR
+const isChannelPage = !!channel?.username
+const avatarUrl = isChannelPage ? (channel?.avatar || siteAvatar) : (siteAvatar || channel?.avatar)
+// 判断是否使用站点自定义图标（不需要代理回退）
+const isSiteAvatar = !isChannelPage && !!siteAvatar
 
 // 确定链接目标:如果有频道用户名,链接到频道页面;否则链接到首页
 // Allow overriding destination; if href is explicitly false, render as plain text
@@ -30,8 +34,9 @@ const channelUrl = channel?.href === false ? null : (channel?.href || (channel?.
         src={avatarUrl}
         alt={channel?.title || 'Site Avatar'}
         class="header-avatar"
-        referrerpolicy="no-referrer"
-        onerror={channel?.avatarFallback?.wsrv ? `this.onerror=function(){this.onerror=null;this.src='${channel.avatarFallback.original}'};this.src='${channel.avatarFallback.wsrv}';` : undefined}
+        decoding="async"
+        referrerpolicy={isSiteAvatar ? undefined : 'no-referrer'}
+        onerror={!isSiteAvatar && channel?.avatarFallback?.wsrv ? `this.onerror=function(){this.onerror=null;this.src='${channel.avatarFallback.original}'};this.src='${channel.avatarFallback.wsrv}';` : undefined}
       />
     </a>
   )}
