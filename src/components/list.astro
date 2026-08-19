@@ -25,7 +25,7 @@ const afterCursor = displayPosts[0]?.id
       {
         (() => {
           const backJs = `try{ const key='channel-scroll-${channel.username}'; const postKey='channel-scroll-post-${channel.username}'; const listKey='channel-list-url-${channel.username}'; const pos=sessionStorage.getItem(key); const postId=sessionStorage.getItem(postKey); const listUrl=sessionStorage.getItem(listKey); if(listUrl){ const base='${SITE_URL.replace(/\/$/, '')}'; if(listUrl.startsWith('/')){ location.href = base + listUrl + (postId ? ('#post-'+postId) : ''); } else { location.href = listUrl + (postId ? ('#post-'+postId) : ''); } } else { try{ var ref = document.referrer || ''; if(ref){ var a = document.createElement('a'); a.href = ref; var sameOrigin = a.hostname === location.hostname; if(sameOrigin && ref.indexOf('/channel/${channel.username}') !== -1){ location.href = ref + (postId ? ('#post-'+postId) : ''); throw 'navigated'; } } }catch(e){} if(pos){ location.href='${SITE_URL}channel/${channel.username}' + (postId ? ('#post-'+postId) : ''); } else { history.back(); } } }catch(e){ history.back(); }`;
-          return (<button class="back-button" onclick={backJs}>← 返回</button>)
+          return (<button class="back-button" type="button" onclick={backJs}>← 返回频道</button>)
         })()
       }
     </div>
@@ -36,12 +36,12 @@ const afterCursor = displayPosts[0]?.id
       {
         before && beforeCursor > 1 ? (
           currentChannel ? (
-            <a href={`${SITE_URL}channel/${currentChannel}/before/${beforeCursor}`} title="更早" class="page">
-              ← 更早
+            <a href={`${SITE_URL}channel/${currentChannel}/before/${beforeCursor}`} title="更早文章" class="page">
+              ← 更早文章
             </a>
           ) : (
-            <a href={`${SITE_URL}before/${beforeCursor}`} title="更早" class="page">
-              ← 更早
+            <a href={`${SITE_URL}before/${beforeCursor}`} title="更早文章" class="page">
+              ← 更早文章
             </a>
           )
         ) : (
@@ -53,12 +53,12 @@ const afterCursor = displayPosts[0]?.id
       {
         after && afterCursor ? (
           currentChannel ? (
-            <a href={`${SITE_URL}channel/${currentChannel}/after/${afterCursor}`} title="更新" class="page">
-              更新 →
+            <a href={`${SITE_URL}channel/${currentChannel}/after/${afterCursor}`} title="更新文章" class="page">
+              更新文章 →
             </a>
           ) : (
-            <a href={`${SITE_URL}after/${afterCursor}`} title="更新" class="page">
-              更新 →
+            <a href={`${SITE_URL}after/${afterCursor}`} title="更新文章" class="page">
+              更新文章 →
             </a>
           )
         ) : (
@@ -105,12 +105,12 @@ const afterCursor = displayPosts[0]?.id
     {
       before && beforeCursor > 1 ? (
         currentChannel ? (
-          <a href={`${SITE_URL}channel/${currentChannel}/before/${beforeCursor}`} title="更早" class="page">
-            ← 更早
+          <a href={`${SITE_URL}channel/${currentChannel}/before/${beforeCursor}`} title="更早文章" class="page">
+            ← 更早文章
           </a>
         ) : (
-          <a href={`${SITE_URL}before/${beforeCursor}`} title="更早" class="page">
-            ← 更早
+          <a href={`${SITE_URL}before/${beforeCursor}`} title="更早文章" class="page">
+            ← 更早文章
           </a>
         )
       ) : (
@@ -122,12 +122,12 @@ const afterCursor = displayPosts[0]?.id
     {
       after && afterCursor ? (
         currentChannel ? (
-          <a href={`${SITE_URL}channel/${currentChannel}/after/${afterCursor}`} title="更新" class="page">
-            更新 →
+          <a href={`${SITE_URL}channel/${currentChannel}/after/${afterCursor}`} title="更新文章" class="page">
+            更新文章 →
           </a>
         ) : (
-          <a href={`${SITE_URL}after/${afterCursor}`} title="更新" class="page">
-            更新 →
+          <a href={`${SITE_URL}after/${afterCursor}`} title="更新文章" class="page">
+            更新文章 →
           </a>
         )
       ) : (
@@ -153,19 +153,27 @@ const afterCursor = displayPosts[0]?.id
   }
 
   .pages-top {
-    margin-bottom: 20px;
-    padding-bottom: 15px;
+    margin-bottom: 10px;
+    padding-bottom: 12px;
     border-bottom: 1px solid var(--border-color, #e0e0e0);
   }
   .back-container {
-    padding: 10px 20px;
+    padding: 0 0 12px;
   }
 
   .back-button {
-    padding: 6px 10px;
-    border-radius: 6px;
-    border: 1px solid var(--border-color);
-    background: white;
+    padding: 7px 12px;
+    border-radius: 5px;
+    border: 1px solid var(--border-strong-color);
+    background: var(--card-bg);
+    color: var(--secondary-color);
+    font: inherit;
+    font-size: 13px;
     cursor: pointer;
+  }
+
+  .back-button:hover {
+    color: var(--link-color);
+    border-color: var(--link-color);
   }
 </style>

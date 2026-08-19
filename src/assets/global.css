@@ -16,8 +16,7 @@ html {
 }
 
 #aside-container {
-  position: sticky;
-  top: 0;
+  display: none !important;
 }
 
 #aside-container .nav {
@@ -159,5 +158,219 @@ html {
       opacity: 0.9;
       pointer-events: auto;
     }
+  }
+}
+
+/* Shared layout controls for the refreshed single-column shell. */
+.site-toolbar {
+  width: 100%;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.site-toolbar-inner {
+  width: min(100%, 1160px);
+  min-height: 58px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.toolbar-navigation,
+.desktop-nav,
+.toolbar-home,
+.toolbar-search,
+.search-row {
+  display: flex;
+  align-items: center;
+}
+
+.toolbar-navigation {
+  gap: 18px;
+  min-width: 0;
+}
+
+.toolbar-home {
+  flex: 0 0 auto;
+  gap: 7px;
+  color: var(--foreground-color) !important;
+  font-size: 14px;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.toolbar-home:hover {
+  color: var(--link-color) !important;
+  text-decoration: none;
+}
+
+.desktop-nav {
+  gap: 4px;
+  min-width: 0;
+}
+
+.toolbar-link {
+  padding: 7px 10px;
+  border-radius: 5px;
+  color: var(--secondary-color) !important;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.toolbar-link:hover,
+.toolbar-link.current {
+  color: var(--foreground-color) !important;
+  background: rgba(255, 255, 255, 0.58);
+  text-decoration: none;
+}
+
+.toolbar-link.current {
+  box-shadow: inset 0 -2px 0 var(--highlight-color);
+}
+
+.toolbar-search {
+  flex: 0 1 320px;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.toolbar-search .search-row {
+  width: 100%;
+  gap: 6px;
+}
+
+.toolbar-search input[type="search"] {
+  min-width: 0;
+  width: 100%;
+  height: 34px;
+  padding: 0 11px;
+  border: 1px solid var(--border-color);
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.55);
+  color: var(--foreground-color);
+  font: inherit;
+  font-size: 13px;
+}
+
+.toolbar-search button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 1px solid var(--border-color);
+  border-radius: 5px;
+  background: var(--card-bg);
+  color: var(--secondary-color);
+  cursor: pointer;
+}
+
+.toolbar-search button:hover {
+  color: var(--link-color);
+  border-color: var(--border-strong-color);
+}
+
+.mobile-menu-toggle {
+  display: none;
+  color: var(--foreground-color);
+  box-shadow: 0 5px 18px rgba(56, 45, 33, 0.1);
+}
+
+.mobile-menu-heading {
+  padding: 10px 8px 18px;
+  color: var(--secondary-color);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.mobile-menu-link.current {
+  color: var(--foreground-color);
+  background: rgba(255, 255, 255, 0.7);
+  box-shadow: inset 3px 0 0 var(--highlight-color);
+}
+
+.mobile-menu-close svg {
+  display: block;
+}
+
+.mobile-search {
+  display: grid;
+  gap: 8px;
+  margin: 16px 8px 8px;
+  padding: 14px 0 2px;
+  border-top: 1px solid var(--border-color);
+}
+
+.mobile-search .search-row {
+  display: flex;
+  gap: 6px;
+}
+
+.mobile-search input[type="search"] {
+  min-width: 0;
+  flex: 1;
+  height: 36px;
+  padding: 0 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.65);
+  color: var(--foreground-color);
+  font: inherit;
+  font-size: 14px;
+}
+
+.mobile-search button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 1px solid var(--border-color);
+  border-radius: 5px;
+  background: var(--card-bg);
+  color: var(--secondary-color);
+}
+
+.mobile-search .search-scope {
+  display: flex;
+  gap: 12px;
+  color: var(--secondary-color);
+  font-size: 13px;
+}
+
+.site-footer {
+  padding: 22px 20px 30px;
+  margin-top: 0;
+}
+
+.site-footer-inner {
+  max-width: 1160px;
+  color: var(--secondary-color);
+}
+
+a:focus-visible,
+button:focus-visible,
+select:focus-visible,
+input:focus-visible {
+  outline: 3px solid rgba(217, 93, 57, 0.28);
+  outline-offset: 2px;
+}
+
+@media screen and (max-width: 760px) {
+  .site-toolbar {
+    display: none;
+  }
+
+  .mobile-menu-toggle {
+    display: flex;
+  }
+
+  .site-footer {
+    padding-left: 0;
+    padding-right: 0;
   }
 }

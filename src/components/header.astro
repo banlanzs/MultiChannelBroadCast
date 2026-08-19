@@ -27,7 +27,7 @@ const isSiteAvatar = !isChannelPage && !!siteAvatar
 const channelUrl = channel?.href === false ? null : (channel?.href || (channel?.username ? `${SITE_URL}channel/${channel.username}` : SITE_URL))
 ---
 
-<div id="header">
+<div id="header" class={showGlobalRss ? 'header-home' : 'header-content'}>
   {avatarUrl && (
     <a href={channelUrl}>
       <img
@@ -98,26 +98,36 @@ const channelUrl = channel?.href === false ? null : (channel?.href || (channel?.
 <style>
   #header {
     display: flex;
-    flex-direction: column;
     align-items: center;
-    padding: 40px 20px 20px;
-    gap: 15px;
+    width: 100%;
+    box-sizing: border-box;
+    gap: 14px;
   }
 
   .header-avatar {
-    width: 128px;
-    height: 128px;
+    width: 52px;
+    height: 52px;
     border-radius: 50%;
     object-fit: cover;
+    border: 3px solid var(--card-bg, #fffdf9);
+    box-shadow: var(--shadows);
+    display: block;
   }
 
   .header-title {
-    text-align: center;
+    min-width: 0;
+    flex: 1;
+    text-align: left;
   }
 
   .site-title {
-    font-size: 24px;
+    display: block;
+    overflow: hidden;
+    font-size: 20px;
     font-weight: 600;
+    line-height: 1.25;
+    text-overflow: ellipsis;
+    white-space: nowrap;
     color: var(--text-color, #333);
     text-decoration: none;
   }
@@ -128,17 +138,81 @@ const channelUrl = channel?.href === false ? null : (channel?.href || (channel?.
 
   .header-icons {
     display: flex;
-    gap: 15px;
+    gap: 4px;
     flex-wrap: wrap;
     justify-content: center;
   }
 
   .header-icons a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
     color: var(--secondary-color, #666);
     transition: color 0.2s;
+    border-radius: 5px;
   }
 
   .header-icons a:hover {
     color: var(--highlight-color, #ff6b6b);
+    background: rgba(255, 255, 255, 0.58);
+    text-decoration: none;
+  }
+
+  .header-home {
+    flex-direction: column;
+    justify-content: center;
+    padding: 34px 20px 26px;
+    gap: 12px;
+    text-align: center;
+  }
+
+  .header-home .header-avatar {
+    width: 88px;
+    height: 88px;
+  }
+
+  .header-home .header-title {
+    flex: 0 1 auto;
+    max-width: min(100%, 620px);
+    text-align: center;
+  }
+
+  .header-home .site-title {
+    font-size: clamp(24px, 4vw, 34px);
+    white-space: normal;
+  }
+
+  .header-home .header-icons {
+    gap: 6px;
+  }
+
+  @media (max-width: 760px) {
+    .header-home {
+      padding: 24px 8px 20px;
+    }
+
+    .header-home .header-avatar {
+      width: 72px;
+      height: 72px;
+    }
+
+    .header-home .site-title {
+      font-size: 26px;
+    }
+
+    .header-content {
+      padding: 12px 0;
+    }
+
+    .header-content .header-avatar {
+      width: 42px;
+      height: 42px;
+    }
+
+    .header-content .site-title {
+      font-size: 18px;
+    }
   }
 </style>

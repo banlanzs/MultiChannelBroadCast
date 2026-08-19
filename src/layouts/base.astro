@@ -118,6 +118,8 @@ const effectiveChannel = currentChannel || channel?.username || ''
 const hasChannelScope = Boolean(effectiveChannel)
 const defaultSearchScope = hasChannelScope ? 'channel' : 'all'
 const showSearchScope = !GOOGLE_SEARCH_SITE && hasChannelScope
+const isHome = pathname === '/'
+const showMobileMenu = !isHome || navs.length > 0 || Boolean(TAGS) || Boolean(LINKS) || Boolean(channel?.username)
 
 ---
 
@@ -146,39 +148,61 @@ const showSearchScope = !GOOGLE_SEARCH_SITE && hasChannelScope
   </head>
 
   <body>
-    {/* 移动端汉堡菜单: 在频道页也需要显示 (频道页右侧内容在移动端被折叠到汉堡菜单) */}
-    {(navs.length > 0 || TAGS || LINKS || pathname.startsWith('/channel') || channel?.username) && (
+    {/* 频道页和自定义导航在移动端收纳到抽屉菜单。 */}
+    {showMobileMenu && (
       <>
-        <button class="mobile-menu-toggle" aria-label="Toggle menu">
+        <button
+          class="mobile-menu-toggle"
+          type="button"
+          aria-label="打开导航菜单"
+          aria-controls="mobile-navigation"
+          aria-expanded="false"
+        >
           <span></span>
           <span></span>
           <span></span>
         </button>
-        <div class="mobile-overlay"></div>
+        <div class="mobile-overlay" aria-hidden="true"></div>
       </>
     )}
     <div id="wrapper">
-      {/* 左侧频道列表已移除：主页已提供频道目录，避免重复展示 */}
-      <!-- 顶部栏: 将 Home 按钮与搜索框移到页面顶端 (仅在非首页显示，且仅在移动端可见) -->
-      {pathname !== '/' && (
-        <div class="topbar">
-          <div class="topbar-left">
-            <a href={SITE_URL} class="topbar-home" title="Home">Home</a>
-          </div>
-          <div class="topbar-center">
-            <form class="topbar-search" action={searchAction} method="get">
+      {!isHome && (
+        <header class="site-toolbar">
+          <div class="site-toolbar-inner">
+            <div class="toolbar-navigation">
+              <a href={SITE_URL} class="toolbar-home" title="返回首页" aria-label="返回首页">
+                <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="m3 11 9-8 9 8"></path>
+                  <path d="M5 10v10h14V10"></path>
+                  <path d="M9 20v-6h6v6"></path>
+                </svg>
+                <span>首页</span>
+              </a>
+              <nav class="desktop-nav" aria-label="主导航">
+                {TAGS ? (
+                  <a href={`${SITE_URL}tags`} class={`toolbar-link ${pathname === '/tags' ? 'current' : ''}`} aria-current={pathname === '/tags' ? 'page' : undefined}>标签</a>
+                ) : null}
+                {LINKS ? (
+                  <a href={`${SITE_URL}links`} class={`toolbar-link ${pathname === '/links' ? 'current' : ''}`} aria-current={pathname === '/links' ? 'page' : undefined}>链接</a>
+                ) : null}
+                {navs.map((nav) => (
+                  <a href={nav.href} title={nav.title} target="_blank" rel="noopener" class="toolbar-link">{nav.title}</a>
+                ))}
+              </nav>
+            </div>
+            <form class="toolbar-search" action={searchAction} method="get" role="search">
               {GOOGLE_SEARCH_SITE ? <input type="hidden" name="as_sitesearch" value={GOOGLE_SEARCH_SITE} /> : null}
               {!GOOGLE_SEARCH_SITE && hasChannelScope ? <input type="hidden" name="channel" value={effectiveChannel} /> : null}
               {
                 showSearchScope ? (
-                  <div class="search-scope">
+                  <div class="search-scope" aria-label="搜索范围">
                     <label>
                       <input type="radio" name="scope" value="channel" checked={defaultSearchScope === 'channel'} />
-                      本频道
+                      <span>本频道</span>
                     </label>
                     <label>
                       <input type="radio" name="scope" value="all" checked={defaultSearchScope === 'all'} />
-                      全频道
+                      <span>全频道</span>
                     </label>
                   </div>
                 ) : (!GOOGLE_SEARCH_SITE ? (
@@ -186,133 +210,84 @@ const showSearchScope = !GOOGLE_SEARCH_SITE && hasChannelScope
                 ) : null)
               }
               <div class="search-row">
-                <input type="text" name="q" placeholder="Search..." />
-                <button type="submit" aria-label="Search">🔍</button>
+                <input type="search" name="q" placeholder="搜索内容" aria-label="搜索内容" />
+                <button type="submit" aria-label="搜索" title="搜索">
+                  <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <path d="m21 21-4.3-4.3"></path>
+                  </svg>
+                </button>
               </div>
             </form>
           </div>
-        </div>
+        </header>
       )}
 
       <div id="container">
-        <div id="main-container" class={pathname === '/' ? 'home-main' : ''}>
+        <div id="main-container" class={isHome ? 'home-main' : ''}>
           <slot />
         </div>
-        {pathname !== '/' && (
-          <div id="aside-container">
-            <slot name="aside">
-            <div class="nav">
-              <div class="nav-item">
-                <a href={SITE_URL} title={channel?.title} class={`nav-link ${pathname === '/' ? 'current' : ''}`}>
-                  Home
-                </a>
-              </div>
-              {
-                TAGS ? (
-                  <div class="nav-item">
-                    <a
-                      href={`${SITE_URL}tags`}
-                      title="Tags"
-                      class={`nav-link ${pathname === '/tags' ? 'current' : ''}`}
-                    >
-                      Tags
-                    </a>
-                  </div>
-                ) : null
-              }
-              {
-                LINKS ? (
-                  <div class="nav-item">
-                    <a
-                      href={`${SITE_URL}links`}
-                      title="Links"
-                      class={`nav-link ${pathname === '/links' ? 'current' : ''}`}
-                    >
-                      Links
-                    </a>
-                  </div>
-                ) : null
-              }
-              {
-                navs.map((nav) => (
-                  <div class="nav-item">
-                    <a href={nav.href} title={nav.title} target="_blank" rel="noopener" class="nav-link">
-                      {nav.title}
-                    </a>
-                  </div>
-                ))
-              }
-            </div>
-            <input class="search-icon" name="icon" type="checkbox" placeholder="Search" />
-            <form class="search-form" action={searchAction} method="get">
-              {GOOGLE_SEARCH_SITE ? <input type="hidden" name="as_sitesearch" value={GOOGLE_SEARCH_SITE} /> : null}
-              {!GOOGLE_SEARCH_SITE && hasChannelScope ? <input type="hidden" name="channel" value={effectiveChannel} /> : null}
-              {
-                showSearchScope ? (
-                  <div class="search-scope">
+      </div>
+    </div>
+
+    {showMobileMenu && (
+      <aside id="mobile-navigation" class="mobile-menu" aria-hidden="true" aria-label="移动端导航">
+        <div class="mobile-menu-inner">
+          <div class="mobile-menu-heading">导航</div>
+          <button class="mobile-menu-close" type="button" aria-label="关闭导航菜单">
+            <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M18 6 6 18"></path>
+              <path d="m6 6 12 12"></path>
+            </svg>
+          </button>
+          <nav class="mobile-menu-section" aria-label="主导航">
+            <a href={SITE_URL} class={`mobile-menu-link ${isHome ? 'current' : ''}`} aria-current={isHome ? 'page' : undefined}>首页</a>
+            {TAGS ? (
+              <a href={`${SITE_URL}tags`} class={`mobile-menu-link ${pathname === '/tags' ? 'current' : ''}`} aria-current={pathname === '/tags' ? 'page' : undefined}>标签</a>
+            ) : null}
+            {LINKS ? (
+              <a href={`${SITE_URL}links`} class={`mobile-menu-link ${pathname === '/links' ? 'current' : ''}`} aria-current={pathname === '/links' ? 'page' : undefined}>链接</a>
+            ) : null}
+            {navs.map((nav) => (
+              <a href={nav.href} target="_blank" rel="noopener" class="mobile-menu-link">{nav.title}</a>
+            ))}
+            {!isHome && (
+              <form class="mobile-search" action={searchAction} method="get" role="search">
+                {GOOGLE_SEARCH_SITE ? <input type="hidden" name="as_sitesearch" value={GOOGLE_SEARCH_SITE} /> : null}
+                {!GOOGLE_SEARCH_SITE && hasChannelScope ? <input type="hidden" name="channel" value={effectiveChannel} /> : null}
+                {showSearchScope ? (
+                  <div class="search-scope" aria-label="搜索范围">
                     <label>
                       <input type="radio" name="scope" value="channel" checked={defaultSearchScope === 'channel'} />
-                      本频道
+                      <span>本频道</span>
                     </label>
                     <label>
                       <input type="radio" name="scope" value="all" checked={defaultSearchScope === 'all'} />
-                      全频道
+                      <span>全频道</span>
                     </label>
                   </div>
-                ) : (!GOOGLE_SEARCH_SITE ? (
-                  <input type="hidden" name="scope" value={defaultSearchScope} />
-                ) : null)
-              }
-              <div class="search-row">
-                <input type="text" name="q" placeholder="Search" />
-                <button type="submit" aria-label="Search">🔍</button>
-              </div>
-            </form>
-            {/* 频道页面保留侧栏内的 Powered by 信息 (放在搜索下方) */}
-            {(pathname.startsWith('/channel') || channel?.username) && (
-              <div class="sidebar-copyright">
-                Powered by
-                <a href="https://github.com/banlanzs/MultiChannelBroadCast" target="_blank" rel="noopener">
-                  Multi-Channel Fork
-                </a>
-                <br />
-                <a href="https://github.com/ccbikai/BroadcastChannel" target="_blank" rel="noopener">
-                  inspired by  BroadcastChannel
-                </a>
-              </div>
+                ) : (!GOOGLE_SEARCH_SITE ? <input type="hidden" name="scope" value={defaultSearchScope} /> : null)}
+                <div class="search-row">
+                  <input type="search" name="q" placeholder="搜索内容" aria-label="搜索内容" />
+                  <button type="submit" aria-label="搜索" title="搜索">
+                    <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <circle cx="11" cy="11" r="8"></circle>
+                      <path d="m21 21-4.3-4.3"></path>
+                    </svg>
+                  </button>
+                </div>
+              </form>
             )}
-          </slot>
-          </div>
-        )}
-      </div>
-    </div>
-    
-    {/* Mobile menu (用于汉堡菜单收纳 NAVS/TAGS/LINKS 等) */}
-    <aside class="mobile-menu" aria-hidden="true">
-      <div class="mobile-menu-inner">
-        <button class="mobile-menu-close" aria-label="Close menu">✕</button>
-        <div class="mobile-menu-section">
-          {TAGS ? (
-            <a href={`${SITE_URL}tags`} class="mobile-menu-link">Tags</a>
-          ) : null}
-          {LINKS ? (
-            <a href={`${SITE_URL}links`} class="mobile-menu-link">Links</a>
-          ) : null}
-          {navs.map((nav) => (
-            <a href={nav.href} target="_blank" rel="noopener" class="mobile-menu-link">{nav.title}</a>
-          ))}
-          {/* 在移动端菜单底部显示 Powered by 信息 (频道页需要此项) */}
-          {(pathname.startsWith('/channel') || channel?.username || navs.length > 0 || TAGS || LINKS) && (
             <div class="mobile-menu-powered">
               <hr />
               <div>Powered by <a href="https://github.com/banlanzs/MultiChannelBroadCast" target="_blank" rel="noopener">Multi-Channel Fork</a></div>
               <div>inspired by <a href="https://github.com/ccbikai/BroadcastChannel" target="_blank" rel="noopener">BroadcastChannel</a></div>
             </div>
-          )}
+          </nav>
         </div>
-      </div>
-    </aside>
-    <button id="back-to-top" aria-label="Back to top" type="button">
+      </aside>
+    )}
+    <button id="back-to-top" aria-label="返回顶部" title="返回顶部" type="button">
       <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"></path></svg>
     </button>
     {
@@ -413,17 +388,21 @@ const showSearchScope = !GOOGLE_SEARCH_SITE && hasChannelScope
 
   .search-scope {
     display: flex;
+    flex: 0 0 auto;
     gap: 10px;
     align-items: center;
     font-size: 12px;
     color: var(--secondary-color, #666);
+    white-space: nowrap;
   }
 
   .search-scope label {
     display: flex;
+    flex: 0 0 auto;
     align-items: center;
     gap: 4px;
     cursor: pointer;
+    white-space: nowrap;
   }
 
   /* 移动端汉堡菜单 */
@@ -569,7 +548,7 @@ const showSearchScope = !GOOGLE_SEARCH_SITE && hasChannelScope
     margin: 0 auto;
   }
 
-  @media (max-width: 1024px) {
+  @media (max-width: 760px) {
     /* 移动端显示 topbar */
     .topbar {
       display: flex;
@@ -642,35 +621,44 @@ const showSearchScope = !GOOGLE_SEARCH_SITE && hasChannelScope
     const overlay = document.querySelector('.mobile-overlay')
 
     if (toggle && menu && overlay) {
+      const setMenuState = (open) => {
+        toggle.classList.toggle('active', open)
+        menu.classList.toggle('active', open)
+        overlay.classList.toggle('active', open)
+        toggle.setAttribute('aria-expanded', String(open))
+        menu.setAttribute('aria-hidden', String(!open))
+        overlay.setAttribute('aria-hidden', String(!open))
+        document.body.style.overflow = open ? 'hidden' : ''
+      }
+
       toggle.addEventListener('click', () => {
-        toggle.classList.toggle('active')
-        menu.classList.toggle('active')
-        overlay.classList.toggle('active')
+        setMenuState(!menu.classList.contains('active'))
       })
 
       overlay.addEventListener('click', () => {
-        toggle.classList.remove('active')
-        menu.classList.remove('active')
-        overlay.classList.remove('active')
+        setMenuState(false)
       })
 
       // 点击链接后关闭菜单
       menu.querySelectorAll('a').forEach(link => {
         link.addEventListener('click', () => {
-          toggle.classList.remove('active')
-          menu.classList.remove('active')
-          overlay.classList.remove('active')
+          setMenuState(false)
         })
       })
       // 关闭按钮
       const closeBtn = document.querySelector('.mobile-menu-close')
       if (closeBtn) {
         closeBtn.addEventListener('click', () => {
-          toggle.classList.remove('active')
-          menu.classList.remove('active')
-          overlay.classList.remove('active')
+          setMenuState(false)
         })
       }
+
+      document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && menu.classList.contains('active')) {
+          setMenuState(false)
+          toggle.focus()
+        }
+      })
     }
   })
 </script>
